@@ -16,7 +16,7 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {"Welocme to": "Trips microservice"}
 
 
 @app.get("/items/{item_id}")
