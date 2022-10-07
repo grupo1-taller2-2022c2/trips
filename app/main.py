@@ -1,6 +1,17 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+accept_all = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=accept_all,
+    allow_credentials=True,
+    allow_methods=accept_all,
+    allow_headers=accept_all,
+)
 
 
 @app.get("/")
