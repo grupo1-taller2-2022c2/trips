@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import trips_routes
+from app.routes import trips_routes, drivers_routes
 
 app = FastAPI()
 
@@ -21,3 +21,4 @@ def read_root():
 
 
 app.include_router(trips_routes.router, prefix="/trips", tags=["Trips"])
+app.include_router(drivers_routes.router, prefix="/drivers", tags=["Drivers"])
