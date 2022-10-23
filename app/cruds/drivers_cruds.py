@@ -32,3 +32,7 @@ def save_driver_location_db(driver: DriverLocationSchema, db: Session):
         return
     except Exception as _:
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+def get_driver_location_by_email(driver_email: str, db: Session):
+    return db.query(DriverLocation).filter(DriverLocation.email == driver_email).first()

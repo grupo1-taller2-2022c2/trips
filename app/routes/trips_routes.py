@@ -57,16 +57,6 @@ def cost_between_two_points(src_address: str, src_number: int, dst_address: str,
     return {"cost": cost}
 
 
-@router.get("/drivers_lookup/", status_code=status.HTTP_200_OK)
-def look_for_driver(src_address: str, src_number: int, dst_address: str, dst_number: int):
-    url = url_base + "/drivers/lookup_drivers"
-    response = requests.get(url=url)
-    if response.ok:
-        return response.json()
-    raise HTTPException(status_code=response.status_code,
-                        detail=response.json()['detail'])
-
-
 def address_exists(street_address: str, street_num: int):
     city = "Buenos Aires"
     country = "Argentina"
@@ -78,4 +68,3 @@ def address_exists(street_address: str, street_num: int):
         return True, response.json()[0]
     else:
         return False, None
-
