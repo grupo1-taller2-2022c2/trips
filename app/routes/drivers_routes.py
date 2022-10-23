@@ -25,7 +25,7 @@ def save_last_location(driver: DriverLocationSchema, db: Session = Depends(get_d
 
 @router.get("/driver_lookup/", status_code=status.HTTP_200_OK)
 def look_for_driver(src_address: str, src_number: int, db: Session = Depends(get_db)):
-    url = url_base + "/drivers/lookup_drivers"
+    url = url_base + "/drivers/all_available"
     response = requests.get(url=url)
     if response.ok:
         distance = 0
@@ -38,6 +38,7 @@ def look_for_driver(src_address: str, src_number: int, db: Session = Depends(get
             if (new_distance < distance) or (driver_info is None):
                 distance = new_distance
                 driver_info = driver
+        return driver_info
     raise HTTPException(status_code=response.status_code,
                         detail=response.json()['detail'])
 
