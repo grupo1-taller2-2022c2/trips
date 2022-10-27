@@ -31,9 +31,11 @@ class Pricing:
 PRICING = Pricing()
 
 
-@router.get("/history/{passenger_email}", status_code=status.HTTP_200_OK)
-def get_travel_history(passenger_email: str, db: Session = Depends(get_db)):
-    return get_travel_history_from_db(passenger_email, db)
+@router.get("/history/{email}", status_code=status.HTTP_200_OK)
+def get_travel_history(email: str, user_type: Union[str, None] = None, db: Session = Depends(get_db)):
+    if user_type == "driver":
+        return get_driver_travel_history_from_db(email, db)
+    return get_passenger_travel_history_from_db(email, db)
 
 
 @router.get("/address_validation/", status_code=status.HTTP_200_OK)

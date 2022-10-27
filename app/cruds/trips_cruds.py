@@ -7,8 +7,12 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 
-def get_travel_history_from_db(passenger_email, db: Session):
+def get_passenger_travel_history_from_db(passenger_email, db: Session):
     return db.query(Trip).filter(Trip.passenger_email == passenger_email).order_by(Trip.id.desc()).all()[:5]
+
+
+def get_driver_travel_history_from_db(driver_email, db: Session):
+    return db.query(Trip).filter(Trip.driver_email == driver_email).order_by(Trip.id.desc()).all()[:5]
 
 
 def create_loc_for_user(useremail, loc, street_name, street_num, db: Session):
