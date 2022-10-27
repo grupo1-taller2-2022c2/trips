@@ -24,8 +24,9 @@ def save_last_location(driver: DriverLocationSchema, db: Session = Depends(get_d
 
 
 @router.get("/driver_lookup/", status_code=status.HTTP_200_OK)
-def look_for_driver(src_address: str, src_number: int, dst_address: str, dst_number: int, trip_id: int, db: Session = Depends(get_db)):
+def look_for_driver(trip_id: int, db: Session = Depends(get_db)):
     url = url_base + "/drivers/all_available"
+    db_trip = get_trip_from_id(trip_id, db)
     response = requests.get(url=url)
     if response.ok:
         distance = 0
@@ -34,7 +35,7 @@ def look_for_driver(src_address: str, src_number: int, dst_address: str, dst_num
             driver_db = get_driver_location_by_email(driver["email"], db)
             if not driver_db or driver_db.state == "driving":
                 continue
-            new_distance = calculate_distance(src_address, src_number, driver_db.street_name, driver_db.street_num)
+            new_distance = calculate_distance(db_trip.src_address, db_trip.src_number, driver_db.street_name, driver_db.street_num)
             if (new_distance < distance) or (driver_info is None):
                 distance = new_distance
                 driver_info = driver
