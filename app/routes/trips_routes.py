@@ -72,6 +72,7 @@ def get_trip(trip_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/accept", status_code=status.HTTP_200_OK)
 def accept_trip(trip: TripState, db: Session = Depends(get_db)):
+    accept_trip_db(trip.trip_id, trip.driver_email, db)
     change_driver_state(trip.driver_email, "driving", db)
     # TODO: SEND NOTIFICATION TO PASSENGER
     return {"message": "Trip accepted"}

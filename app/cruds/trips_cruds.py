@@ -62,10 +62,20 @@ def get_trip_from_id(trip_id: int, db: Session):
     return db_trip
 
 
-def initialize_trip_db(trip_id: int, driver_email: str, db: Session):
+def accept_trip_db(trip_id: int, driver_email: str, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
     try:
         db_trip.driver_email = driver_email
+        db_trip.state = "Accepted"
+        db.commit()
+        return
+    except Exception as _:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+def initialize_trip_db(trip_id: int, driver_email: str, db: Session):
+    db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    try:
         db_trip.date = func.now()
         db_trip.state = "In course"
         db.commit()
