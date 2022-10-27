@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends
-from app.cruds.location_cruds import *
+
+from app.cruds.drivers_cruds import change_driver_state
+from app.cruds.trips_cruds import *
 from sqlalchemy.orm import Session
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -45,14 +47,22 @@ def validate_dst(useremail: str, loc_name: str, db: Session = Depends(get_db)):
 
 
 @router.get("/cost/", status_code=status.HTTP_200_OK)
-def calculate_cost(src_address: str, src_number: int, passenger_email: str, duration: float,
-                   distance: float, trip_type: Union[str, None] = None):
+def calculate_cost(src_address: str, src_number: int, dst_address: str, dst_number: int, passenger_email: str, duration: float,
+                   distance: float, trip_type: Union[str, None] = None, db: Session = Depends(get_db)):
     address_exist, address = address_exists(src_address, src_number)
     if not address_exist:
         raise HTTPException(
             status_code=404, detail="The location isn't valid")
-    cost = PRICING.calculate(distance, duration)
-    return {"cost": cost}
+    price = PRICING.calculate(distance, duration)
+    trip_id = create_trip_info(src_address, src_number, dst_address, dst_number, passenger_email, price, trip_type, db)
+    return {"price": price, "trip_id": trip_id}
+
+
+@router.post("/", status_code=status.HTTP_200_OK)
+def initialize_trip(trip_id: int, driver_email: str, db: Session = Depends(get_db)):
+    initialize_trip_db(trip_id, driver_email, db)
+    change_driver_state(driver_email, db)
+    return {"message": "Initialized"}
 
 
 def address_exists(street_address: str, street_num: int):

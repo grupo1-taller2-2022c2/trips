@@ -7,3 +7,4 @@ class DriverLocation(Base):
     email = Column(String[50], primary_key=True)
     street_name = Column(String[50])
     street_num = Column(Integer)
+    state = Column(String[50])

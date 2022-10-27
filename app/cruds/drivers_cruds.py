@@ -1,5 +1,5 @@
-import app.models.location_models as destination_models
-from app.models.location_models import *
+import app.models.trips_models as destination_models
+from app.models.trips_models import *
 from app.models.drivers_models import *
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
@@ -11,6 +11,7 @@ def create_driver_location(driver: DriverLocationSchema, db: Session):
         email=driver.email,
         street_name=driver.street_name,
         street_num=driver.street_num,
+        state="free",
     )
     try:
         db.add(db_driver)
@@ -36,3 +37,13 @@ def save_driver_location_db(driver: DriverLocationSchema, db: Session):
 
 def get_driver_location_by_email(driver_email: str, db: Session):
     return db.query(DriverLocation).filter(DriverLocation.email == driver_email).first()
+
+
+def change_driver_state(driver_email: str, db: Session):
+    driver_db = db.query(DriverLocation).filter(DriverLocation.email == driver_email).first()
+    try:
+        driver_db.state = "driving"
+        db.commit()
+        return
+    except Exception as _:
+        raise HTTPException(status_code=500, detail="Internal server error")

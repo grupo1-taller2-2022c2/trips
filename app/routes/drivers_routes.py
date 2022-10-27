@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.cruds.drivers_cruds import save_driver_location_db, get_driver_location_by_email
-from app.cruds.location_cruds import *
+from app.cruds.trips_cruds import *
 from sqlalchemy.orm import Session
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -24,7 +24,7 @@ def save_last_location(driver: DriverLocationSchema, db: Session = Depends(get_d
 
 
 @router.get("/driver_lookup/", status_code=status.HTTP_200_OK)
-def look_for_driver(src_address: str, src_number: int, db: Session = Depends(get_db)):
+def look_for_driver(src_address: str, src_number: int, dst_address: str, dst_number: int, trip_id: int, db: Session = Depends(get_db)):
     url = url_base + "/drivers/all_available"
     response = requests.get(url=url)
     if response.ok:
@@ -32,12 +32,13 @@ def look_for_driver(src_address: str, src_number: int, db: Session = Depends(get
         driver_info = None
         for driver in response.json():
             driver_db = get_driver_location_by_email(driver["email"], db)
-            if not driver_db:
+            if not driver_db or driver_db.state == "driving":
                 continue
             new_distance = calculate_distance(src_address, src_number, driver_db.street_name, driver_db.street_num)
             if (new_distance < distance) or (driver_info is None):
                 distance = new_distance
                 driver_info = driver
+
         return driver_info
     raise HTTPException(status_code=response.status_code,
                         detail=response.json()['detail'])
