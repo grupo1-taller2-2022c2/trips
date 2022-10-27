@@ -6,6 +6,7 @@ from starlette.exceptions import HTTPException
 from app.database import get_db
 import requests
 import os
+from typing import Union
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ class Pricing:
 PRICING = Pricing()
 
 
-@router.get("/address_validation/{street_address}+{street_num}", status_code=status.HTTP_200_OK)
+@router.get("/address_validation/", status_code=status.HTTP_200_OK)
 def validate_address(street_address: str, street_num: int):
     if not address_exists(street_address, street_num):
         raise HTTPException(
@@ -43,16 +44,13 @@ def validate_dst(useremail: str, loc_name: str, db: Session = Depends(get_db)):
     return {"street_name": address_db.street_name, "street_num": address_db.street_num}
 
 
-@router.get("/reg_cost/{src_address}+{src_number}&"
-            "{dst_address}+{dst_number}&"
-            "{driver_email}&{passenger_email}&"
-            "{duration}&{distance}&{location}&"
-            "{date}&{hour}", status_code=status.HTTP_200_OK)
-def cost_between_two_points(src_address: str, src_number: int, dst_address: str, dst_number: int, driver_email: str,
-                            passenger_email: str, duration: float, distance: float, location: str, date, hour):
-    if (not address_exists(src_address, src_number)) or (not address_exists(dst_address, dst_number)):
+@router.get("/cost/", status_code=status.HTTP_200_OK)
+def calculate_cost(src_address: str, src_number: int, passenger_email: str, duration: float,
+                   distance: float, trip_type: Union[str, None] = None):
+    address_exist, address = address_exists(src_address, src_number)
+    if not address_exist:
         raise HTTPException(
-            status_code=404, detail="The locations aren't valid")
+            status_code=404, detail="The location isn't valid")
     cost = PRICING.calculate(distance, duration)
     return {"cost": cost}
 
@@ -62,9 +60,9 @@ def address_exists(street_address: str, street_num: int):
     country = "Argentina"
     url = f"https://nominatim.openstreetmap.org/?addressdetails=1&street={street_address}+{street_num}&city={city}&country={country}&format=json&limit=1"
 
-    response = requests.get(url)
+    response = requests.get(url).json()
 
-    if response.ok:
-        return True, response.json()[0]
+    if len(response) != 0:
+        return True, response[0]
     else:
         return False, None
