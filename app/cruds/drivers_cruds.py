@@ -39,10 +39,10 @@ def get_driver_location_by_email(driver_email: str, db: Session):
     return db.query(DriverLocation).filter(DriverLocation.email == driver_email).first()
 
 
-def change_driver_state(driver_email: str, db: Session):
+def change_driver_state(driver_email: str, state: str, db: Session):
     driver_db = db.query(DriverLocation).filter(DriverLocation.email == driver_email).first()
     try:
-        driver_db.state = "driving"
+        driver_db.state = state
         db.commit()
         return
     except Exception as _:

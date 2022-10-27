@@ -10,6 +10,8 @@ import requests
 import os
 from typing import Union
 
+from app.schemas.trips_schemas import TripState
+
 router = APIRouter()
 
 
@@ -58,11 +60,40 @@ def calculate_cost(src_address: str, src_number: int, dst_address: str, dst_numb
     return {"price": price, "trip_id": trip_id}
 
 
-@router.post("/", status_code=status.HTTP_200_OK)
-def initialize_trip(trip_id: int, driver_email: str, db: Session = Depends(get_db)):
-    initialize_trip_db(trip_id, driver_email, db)
-    change_driver_state(driver_email, db)
-    return {"message": "Initialized"}
+@router.get("/{trip_id}", status_code=status.HTTP_200_OK)
+def get_trip(trip_id: int, db: Session = Depends(get_db)):
+    return get_trip_from_id(trip_id, db)
+
+
+@router.patch("/accept", status_code=status.HTTP_200_OK)
+def accept_trip(trip: TripState, db: Session = Depends(get_db)):
+    change_driver_state(trip.driver_email, "driving", db)
+    # TODO: SEND NOTIFICATION TO PASSENGER
+    return {"message": "Trip accepted"}
+
+
+@router.patch("/deny", status_code=status.HTTP_200_OK)
+def deny_trip(trip: TripState, db: Session = Depends(get_db)):
+    deny_trip_db(trip.trip_id, trip.driver_email, db)
+    change_driver_state(trip.driver_email, "free", db)
+    # TODO: SEND NOTIFICATION TO PASSENGER
+    return {"message": "Trip denied"}
+
+
+@router.patch("/initialize", status_code=status.HTTP_200_OK)
+def initialize_trip(trip: TripState, db: Session = Depends(get_db)):
+    initialize_trip_db(trip.trip_id, trip.driver_email, db)
+    change_driver_state(trip.driver_email, "driving", db)
+    # TODO: SEND NOTIFICATION TO PASSENGER
+    return {"message": "Trip initialized"}
+
+
+@router.patch("/finalize", status_code=status.HTTP_200_OK)
+def finalize_trip(trip: TripState, db: Session = Depends(get_db)):
+    finalize_trip_db(trip.trip_id, db)
+    change_driver_state(trip.driver_email, "free", db)
+    # TODO: SEND NOTIFICATION TO PASSENGER
+    return {"message": "Trip finalized"}
 
 
 def address_exists(street_address: str, street_num: int):

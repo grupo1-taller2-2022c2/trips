@@ -33,13 +33,13 @@ def look_for_driver(trip_id: int, db: Session = Depends(get_db)):
         driver_info = None
         for driver in response.json():
             driver_db = get_driver_location_by_email(driver["email"], db)
-            if not driver_db or driver_db.state == "driving":
+            if (not driver_db) or (driver_db.state == "driving"):
                 continue
             new_distance = calculate_distance(db_trip.src_address, db_trip.src_number, driver_db.street_name, driver_db.street_num)
             if (new_distance < distance) or (driver_info is None):
                 distance = new_distance
                 driver_info = driver
-
+        # TODO: send notification to driver
         return driver_info
     raise HTTPException(status_code=response.status_code,
                         detail=response.json()['detail'])

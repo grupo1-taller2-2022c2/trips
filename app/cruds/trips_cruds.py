@@ -55,6 +55,7 @@ def get_trip_from_id(trip_id: int, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not db_trip:
         raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+    return db_trip
 
 
 def initialize_trip_db(trip_id: int, driver_email: str, db: Session):
@@ -63,6 +64,28 @@ def initialize_trip_db(trip_id: int, driver_email: str, db: Session):
         db_trip.driver_email = driver_email
         db_trip.date = func.now()
         db_trip.state = "In course"
+        db.commit()
+        return
+    except Exception as _:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+def deny_trip_db(trip_id: int, driver_email: str, db: Session):
+    db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    try:
+        db_trip.driver_email = driver_email
+        db_trip.date = func.now()
+        db_trip.state = "Denied"
+        db.commit()
+        return
+    except Exception as _:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+def finalize_trip_db(trip_id: int, db: Session):
+    db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    try:
+        db_trip.state = "Completed"
         db.commit()
         return
     except Exception as _:
