@@ -31,6 +31,11 @@ class Pricing:
 PRICING = Pricing()
 
 
+@router.get("/history/{passenger_email}", status_code=status.HTTP_200_OK)
+def get_travel_history(passenger_email: str, db: Session = Depends(get_db)):
+    return get_travel_history_from_db(passenger_email, db)
+
+
 @router.get("/address_validation/", status_code=status.HTTP_200_OK)
 def validate_address(street_address: str, street_num: int):
     if not address_exists(street_address, street_num):

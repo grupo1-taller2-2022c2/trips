@@ -7,6 +7,10 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 
+def get_travel_history_from_db(passenger_email, db: Session):
+    return db.query(Trip).filter(Trip.passenger_email == passenger_email).order_by(Trip.id.desc()).all()[:5]
+
+
 def create_loc_for_user(useremail, loc, street_name, street_num, db: Session):
     # TODO: caso en que el dst ya existe para ese usuario
     db_location = SavedLocation(
