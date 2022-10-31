@@ -10,6 +10,7 @@ import requests
 import os
 from typing import Union
 
+from app.routes.notifications_routes import send_push_message
 from app.schemas.trips_schemas import TripState
 
 router = APIRouter()
@@ -74,25 +75,26 @@ def get_trip(trip_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/accept", status_code=status.HTTP_200_OK)
 def accept_trip(trip: TripState, db: Session = Depends(get_db)):
-    accept_trip_db(trip.trip_id, trip.driver_email, db)
+    passenger_email = accept_trip_db(trip.trip_id, trip.driver_email, db)
     change_driver_state(trip.driver_email, "driving", db)
-    # TODO: SEND NOTIFICATION TO PASSENGER
+    send_push_message(email=passenger_email, title="Trip Accepted", message="The driver has accepted the trip.", db=db)
     return {"message": "Trip accepted"}
 
 
 @router.patch("/deny", status_code=status.HTTP_200_OK)
 def deny_trip(trip: TripState, db: Session = Depends(get_db)):
-    deny_trip_db(trip.trip_id, trip.driver_email, db)
+    passenger_email = deny_trip_db(trip.trip_id, trip.driver_email, db)
     change_driver_state(trip.driver_email, "free", db)
-    # TODO: SEND NOTIFICATION TO PASSENGER
+    send_push_message(email=passenger_email, title="Trip Denied", message="The driver has denied the trip.", db=db)
     return {"message": "Trip denied"}
 
 
 @router.patch("/initialize", status_code=status.HTTP_200_OK)
 def initialize_trip(trip: TripState, db: Session = Depends(get_db)):
-    initialize_trip_db(trip.trip_id, trip.driver_email, db)
+    passenger_email = initialize_trip_db(trip.trip_id, trip.driver_email, db)
     change_driver_state(trip.driver_email, "driving", db)
-    # TODO: SEND NOTIFICATION TO PASSENGER
+    send_push_message(email=passenger_email, title="Driver Arrived",
+                      message="The driver has arrived to the source address.", db=db)
     return {"message": "Trip initialized"}
 
 
@@ -100,7 +102,6 @@ def initialize_trip(trip: TripState, db: Session = Depends(get_db)):
 def finalize_trip(trip: TripState, db: Session = Depends(get_db)):
     finalize_trip_db(trip.trip_id, db)
     change_driver_state(trip.driver_email, "free", db)
-    # TODO: SEND NOTIFICATION TO PASSENGER
     return {"message": "Trip finalized"}
 
 

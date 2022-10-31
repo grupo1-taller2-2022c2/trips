@@ -8,6 +8,8 @@ from starlette.exceptions import HTTPException
 from app.database import get_db
 import requests
 import os
+
+from app.routes.notifications_routes import send_push_message
 from app.schemas.drivers_schemas import DriverLocationSchema
 import geopy.distance
 
@@ -39,7 +41,10 @@ def look_for_driver(trip_id: int, db: Session = Depends(get_db)):
             if (new_distance < distance) or (driver_info is None):
                 distance = new_distance
                 driver_info = driver
-        # TODO: send notification to driver
+        if driver_info:
+            send_push_message(email=driver_info["email"], title="Trip Request",
+                              message=f"You-ve received a trip request from the passenger {db_trip.passenger_email}.",
+                              db=db, extra={"trip_id": trip_id})
         return driver_info
     raise HTTPException(status_code=response.status_code,
                         detail=response.json()['detail'])

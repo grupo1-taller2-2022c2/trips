@@ -72,7 +72,7 @@ def accept_trip_db(trip_id: int, driver_email: str, db: Session):
         db_trip.driver_email = driver_email
         db_trip.state = "Accepted"
         db.commit()
-        return
+        return db_trip.passenger_email
     except Exception as _:
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -83,7 +83,7 @@ def initialize_trip_db(trip_id: int, driver_email: str, db: Session):
         db_trip.date = func.now()
         db_trip.state = "In course"
         db.commit()
-        return
+        return db_trip.passenger_email
     except Exception as _:
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -95,7 +95,7 @@ def deny_trip_db(trip_id: int, driver_email: str, db: Session):
         db_trip.date = func.now()
         db_trip.state = "Denied"
         db.commit()
-        return
+        return db_trip.passenger_email
     except Exception as _:
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -105,6 +105,6 @@ def finalize_trip_db(trip_id: int, db: Session):
     try:
         db_trip.state = "Completed"
         db.commit()
-        return
+        return db_trip.passenger_email
     except Exception as _:
         raise HTTPException(status_code=500, detail="Internal server error")
