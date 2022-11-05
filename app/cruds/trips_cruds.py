@@ -68,6 +68,10 @@ def get_trip_from_id(trip_id: int, db: Session):
 
 def accept_trip_db(trip_id: int, driver_email: str, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not db_trip:
+        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+    if db_trip.state != "Not initialized":
+        raise HTTPException(status_code=400, detail=f"The trip can't be accepted")
     try:
         db_trip.driver_email = driver_email
         db_trip.state = "Accepted"
@@ -79,6 +83,10 @@ def accept_trip_db(trip_id: int, driver_email: str, db: Session):
 
 def initialize_trip_db(trip_id: int, driver_email: str, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not db_trip:
+        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+    if db_trip.state != "Accepted":
+        raise HTTPException(status_code=400, detail=f"The trip can't be initialized")
     try:
         db_trip.date = func.now()
         db_trip.state = "In course"
@@ -90,6 +98,10 @@ def initialize_trip_db(trip_id: int, driver_email: str, db: Session):
 
 def deny_trip_db(trip_id: int, driver_email: str, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not db_trip:
+        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+    if db_trip.state != "Not initialized":
+        raise HTTPException(status_code=400, detail=f"The trip can't be denied")
     try:
         db_trip.driver_email = driver_email
         db_trip.date = func.now()
@@ -102,6 +114,10 @@ def deny_trip_db(trip_id: int, driver_email: str, db: Session):
 
 def finalize_trip_db(trip_id: int, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not db_trip:
+        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+    if db_trip.state != "In course":
+        raise HTTPException(status_code=400, detail=f"The trip can't be finalized")
     try:
         db_trip.state = "Completed"
         db.commit()

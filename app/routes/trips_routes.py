@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.cruds.drivers_cruds import change_driver_state
+from app.cruds.drivers_cruds import change_driver_state, get_driver_location_by_email
 from app.cruds.trips_cruds import *
 from sqlalchemy.orm import Session
 from starlette import status
@@ -10,7 +10,8 @@ import requests
 import os
 from typing import Union
 
-from app.schemas.trips_schemas import TripState
+from app.routes.drivers_routes import calculate_distance
+from app.schemas.trips_schemas import TripState, TripCreate
 
 router = APIRouter()
 
@@ -63,8 +64,32 @@ def calculate_cost(src_address: str, src_number: int, dst_address: str, dst_numb
         raise HTTPException(
             status_code=404, detail="The location isn't valid")
     price = PRICING.calculate(distance, duration)
-    trip_id = create_trip_info(src_address, src_number, dst_address, dst_number, passenger_email, price, trip_type, db)
-    return {"price": price, "trip_id": trip_id}
+    return {"price": price}
+
+
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def create_trip_and_driver_lookup(trip: TripCreate, db: Session = Depends(get_db)):
+    url = url_base + "/drivers/all_available"
+    response = requests.get(url=url)
+    price = PRICING.calculate(trip.distance, trip.duration)
+    trip_id = create_trip_info(trip.src_address, trip.src_number, trip.dst_address, trip.dst_number,
+                               trip.passenger_email, price, trip.trip_type, db)
+    if response.ok:
+        distance = 0
+        driver_info = None
+        for driver in response.json():
+            driver_db = get_driver_location_by_email(driver["email"], db)
+            if (not driver_db) or (driver_db.state == "driving"):
+                continue
+            new_distance = calculate_distance(trip.src_address, trip.src_number, driver_db.street_name, driver_db.street_num)
+            if (new_distance < distance) or (driver_info is None):
+                distance = new_distance
+                driver_info = driver
+        # TODO: send notification to driver
+        # TODO: maybe assign trip to driver
+        return trip_id, driver_info
+    raise HTTPException(status_code=response.status_code,
+                        detail=response.json()['detail'])
 
 
 @router.get("/{trip_id}", status_code=status.HTTP_200_OK)
@@ -72,36 +97,29 @@ def get_trip(trip_id: int, db: Session = Depends(get_db)):
     return get_trip_from_id(trip_id, db)
 
 
-@router.patch("/accept", status_code=status.HTTP_200_OK)
-def accept_trip(trip: TripState, db: Session = Depends(get_db)):
-    accept_trip_db(trip.trip_id, trip.driver_email, db)
-    change_driver_state(trip.driver_email, "driving", db)
-    # TODO: SEND NOTIFICATION TO PASSENGER
-    return {"message": "Trip accepted"}
-
-
-@router.patch("/deny", status_code=status.HTTP_200_OK)
-def deny_trip(trip: TripState, db: Session = Depends(get_db)):
-    deny_trip_db(trip.trip_id, trip.driver_email, db)
-    change_driver_state(trip.driver_email, "free", db)
-    # TODO: SEND NOTIFICATION TO PASSENGER
-    return {"message": "Trip denied"}
-
-
-@router.patch("/initialize", status_code=status.HTTP_200_OK)
-def initialize_trip(trip: TripState, db: Session = Depends(get_db)):
-    initialize_trip_db(trip.trip_id, trip.driver_email, db)
-    change_driver_state(trip.driver_email, "driving", db)
-    # TODO: SEND NOTIFICATION TO PASSENGER
-    return {"message": "Trip initialized"}
-
-
-@router.patch("/finalize", status_code=status.HTTP_200_OK)
-def finalize_trip(trip: TripState, db: Session = Depends(get_db)):
-    finalize_trip_db(trip.trip_id, db)
-    change_driver_state(trip.driver_email, "free", db)
-    # TODO: SEND NOTIFICATION TO PASSENGER
-    return {"message": "Trip finalized"}
+@router.patch("/", status_code=status.HTTP_200_OK)
+def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
+    if trip.status == "Accept":
+        accept_trip_db(trip.trip_id, trip.driver_email, db)
+        change_driver_state(trip.driver_email, "driving", db)
+        # TODO: SEND NOTIFICATION TO PASSENGER
+        return {"message": "Trip accepted"}
+    if trip.status == "Deny":
+        deny_trip_db(trip.trip_id, trip.driver_email, db)
+        change_driver_state(trip.driver_email, "free", db)
+        # TODO: SEND NOTIFICATION TO PASSENGER
+        return {"message": "Trip denied"}
+    if trip.status == "Initialize":
+        initialize_trip_db(trip.trip_id, trip.driver_email, db)
+        change_driver_state(trip.driver_email, "driving", db)
+        # TODO: SEND NOTIFICATION TO PASSENGER
+        return {"message": "Trip initialized"}
+    if trip.status == "Finalize":
+        finalize_trip_db(trip.trip_id, db)
+        change_driver_state(trip.driver_email, "free", db)
+        # TODO: SEND NOTIFICATION TO PASSENGER
+        return {"message": "Trip finalized"}
+    raise HTTPException(status_code=400, detail="The valid status are: Accept, Deny, Initialize, Finalize")
 
 
 def address_exists(street_address: str, street_num: int):
