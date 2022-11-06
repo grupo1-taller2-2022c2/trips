@@ -15,11 +15,10 @@ def get_driver_travel_history_from_db(driver_email, db: Session):
     return db.query(Trip).filter(Trip.driver_email == driver_email).order_by(Trip.id.desc()).all()[:5]
 
 
-def create_loc_for_user(useremail, loc, street_name, street_num, db: Session):
-    # TODO: caso en que el dst ya existe para ese usuario
+def create_location_for_user(useremail, location, street_name, street_num, db: Session):
     db_location = SavedLocation(
         email=useremail,
-        location=loc,
+        location=location,
         street_name=street_name,
         street_num=street_num,
     )
@@ -32,8 +31,12 @@ def create_loc_for_user(useremail, loc, street_name, street_num, db: Session):
 
 
 def get_address_by_loc(useremail, loc, db: Session):
-    db_location = db.query(SavedLocation).filter(SavedLocation.email == useremail).filter(SavedLocation.location == loc)
+    db_location = db.query(SavedLocation).filter(SavedLocation.email == useremail).filter(SavedLocation.location == loc).first()
     return db_location
+
+
+def get_all_locations_by_email(useremail, db: Session):
+    return db.query(SavedLocation).filter(SavedLocation.email == useremail).all()
 
 
 def create_trip_info(src_address, src_number, dst_address, dst_number, passenger_email, cost,

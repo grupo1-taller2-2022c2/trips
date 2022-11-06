@@ -11,7 +11,7 @@ import os
 from typing import Union
 
 from app.routes.drivers_routes import calculate_distance
-from app.schemas.trips_schemas import TripState, TripCreate
+from app.schemas.trips_schemas import TripState, TripCreate, LocationCreate
 
 router = APIRouter()
 
@@ -47,13 +47,25 @@ def validate_address(street_address: str, street_num: int):
     return
 
 
-@router.get("/saved_loc_validation/{useremail}/{loc_name}", status_code=status.HTTP_201_CREATED)
-def validate_dst(useremail: str, loc_name: str, db: Session = Depends(get_db)):
-    address_db = get_address_by_loc(useremail, loc_name, db)
+@router.get("/saved_location/{useremail}/{location_name}", status_code=status.HTTP_200_OK)
+def get_passenger_saved_location(useremail: str, location_name: str, db: Session = Depends(get_db)):
+    address_db = get_address_by_loc(useremail, location_name, db)
     if not address_db:
         raise HTTPException(
             status_code=404, detail="The location doesn't exist")
     return {"street_name": address_db.street_name, "street_num": address_db.street_num}
+
+
+@router.get("/saved_location/{useremail}/", status_code=status.HTTP_200_OK)
+def get_all_passenger_saved_location(useremail: str, db: Session = Depends(get_db)):
+    address_db = get_all_locations_by_email(useremail, db)
+    return address_db
+
+
+@router.post("/saved_location/", status_code=status.HTTP_201_CREATED)
+def add_passenger_saved_location(location: LocationCreate, db: Session = Depends(get_db)):
+    create_location_for_user(location.email, location.location, location.street_name, location.street_num, db)
+    return {"message": "Saved successfully"}
 
 
 @router.get("/cost/", status_code=status.HTTP_200_OK)
