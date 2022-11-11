@@ -23,6 +23,11 @@ def save_last_location(driver: DriverLocationSchema, db: Session = Depends(get_d
     return {"message": "Saved successfully"}
 
 
+@router.get("/last_location/{driveremail}", status_code=status.HTTP_200_OK)
+def gat_drivers_last_location(driveremail: str, db: Session = Depends(get_db)):
+    return get_driver_location_by_email(driveremail, db)
+
+
 def calculate_distance(src_address, src_number, dst_address, dst_number):
     coord1 = get_latitude_and_longitude(src_address, src_number)
     coord2 = get_latitude_and_longitude(dst_address, dst_number)
