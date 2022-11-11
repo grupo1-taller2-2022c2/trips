@@ -39,9 +39,9 @@ def get_latitude_and_longitude(street_address: str, street_num: int):
     country = "Argentina"
     url = f"https://nominatim.openstreetmap.org/?addressdetails=1&street={street_address}+{street_num}&city={city}&country={country}&format=json&limit=1"
 
-    response = requests.get(url)
+    response = requests.get(url).json()
 
-    if response.ok:
+    if len(response) != 0:
         return response.json()[0]["lat"], response.json()[0]["lon"]
     else:
         return None

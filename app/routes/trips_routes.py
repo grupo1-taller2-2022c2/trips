@@ -122,11 +122,17 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
         # TODO: SEND NOTIFICATION TO PASSENGER
         return {"message": "Trip denied"}
     if trip.status == "Initialize":
+        driver_db = get_driver_location_by_email(trip.driver_email, db)
+        trip_db = get_trip_from_id(trip.trip_id, db)
+        check_distance(driver_db.street_name, driver_db.street_num, trip_db.src_address, trip_db.src_number)
         initialize_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "driving", db)
         # TODO: SEND NOTIFICATION TO PASSENGER
         return {"message": "Trip initialized"}
     if trip.status == "Finalize":
+        driver_db = get_driver_location_by_email(trip.driver_email, db)
+        trip_db = get_trip_from_id(trip.trip_id, db)
+        check_distance(driver_db.street_name, driver_db.street_num, trip_db.src_address, trip_db.src_number)
         finalize_trip_db(trip.trip_id, db)
         change_driver_state(trip.driver_email, "free", db)
         # TODO: SEND NOTIFICATION TO PASSENGER
@@ -145,3 +151,9 @@ def address_exists(street_address: str, street_num: int):
         return True, response[0]
     else:
         return False, None
+
+
+def check_distance(address_1, number_1, address_2, number_2):
+    distance = calculate_distance(address_1, number_1, address_2, number_2)
+    if distance > 0.1:
+        raise HTTPException(status_code=400, detail="The driver has not arrived to the correct place")
