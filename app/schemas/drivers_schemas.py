@@ -5,3 +5,7 @@ class DriverLocationSchema(BaseModel):
     email: EmailStr
     street_name: str
     street_num: int
+
+
+class DriverLocationDelete(BaseModel):
+    email: EmailStr

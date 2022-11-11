@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
-from app.cruds.drivers_cruds import save_driver_location_db, get_driver_location_by_email
+from app.cruds.drivers_cruds import save_driver_location_db, get_driver_location_by_email, \
+    delete_drivers_last_location_db
 from app.cruds.trips_cruds import *
 from sqlalchemy.orm import Session
 from starlette import status
@@ -8,7 +9,7 @@ from starlette.exceptions import HTTPException
 from app.database import get_db
 import requests
 import os
-from app.schemas.drivers_schemas import DriverLocationSchema
+from app.schemas.drivers_schemas import DriverLocationSchema, DriverLocationDelete
 import geopy.distance
 
 router = APIRouter()
@@ -26,6 +27,11 @@ def save_last_location(driver: DriverLocationSchema, db: Session = Depends(get_d
 @router.get("/last_location/{driveremail}", status_code=status.HTTP_200_OK)
 def gat_drivers_last_location(driveremail: str, db: Session = Depends(get_db)):
     return get_driver_location_by_email(driveremail, db)
+
+
+@router.delete("/last_location/", status_code=status.HTTP_200_OK)
+def delete_drivers_last_location(driveremail: DriverLocationDelete, db: Session = Depends(get_db)):
+    return delete_drivers_last_location_db(driveremail.email, db)
 
 
 @router.get("/assigned_trip/{driveremail}", status_code=status.HTTP_200_OK)

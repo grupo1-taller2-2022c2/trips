@@ -39,6 +39,18 @@ def get_driver_location_by_email(driver_email: str, db: Session):
     return db.query(DriverLocation).filter(DriverLocation.email == driver_email).first()
 
 
+def delete_drivers_last_location_db(driver_email: str, db: Session):
+    db_location = db.query(DriverLocation).filter(DriverLocation.email == driver_email).first()
+    if not db_location:
+        raise HTTPException(status_code=404, detail="The driver doesn't exist")
+    try:
+        db.delete(db_location)
+        db.commit()
+        return
+    except Exception as _:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 def change_driver_state(driver_email: str, state: str, db: Session):
     driver_db = db.query(DriverLocation).filter(DriverLocation.email == driver_email).first()
     try:
