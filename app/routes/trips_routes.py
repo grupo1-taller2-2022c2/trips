@@ -84,7 +84,7 @@ def create_trip_and_driver_lookup(trip: TripCreate, db: Session = Depends(get_db
     url = url_base + "/drivers/all_available"
     response = requests.get(url=url)
     price = PRICING.calculate(trip.distance, trip.duration)
-    trip_id = create_trip_info(trip.src_address, trip.src_number, trip.dst_address, trip.dst_number,
+    trip_db = create_trip_info(trip.src_address, trip.src_number, trip.dst_address, trip.dst_number,
                                trip.passenger_email, price, trip.trip_type, db)
     if response.ok:
         distance = 0
@@ -99,7 +99,11 @@ def create_trip_and_driver_lookup(trip: TripCreate, db: Session = Depends(get_db
                 driver_info = driver
         # TODO: send notification to driver
         # TODO: maybe assign trip to driver
-        return trip_id, driver_info
+        if not driver_info:
+            return trip_db.id, None
+        assign_trip_db(trip_db.id, driver_info["email"], db)
+        change_driver_state(driver_info["email"], "assigned", db)
+        return trip_db.id, driver_info
     raise HTTPException(status_code=response.status_code,
                         detail=response.json()['detail'])
 
@@ -132,7 +136,7 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
     if trip.status == "Finalize":
         driver_db = get_driver_location_by_email(trip.driver_email, db)
         trip_db = get_trip_from_id(trip.trip_id, db)
-        check_distance(driver_db.street_name, driver_db.street_num, trip_db.src_address, trip_db.src_number)
+        check_distance(driver_db.street_name, driver_db.street_num, trip_db.dst_address, trip_db.dst_number)
         finalize_trip_db(trip.trip_id, db)
         change_driver_state(trip.driver_email, "free", db)
         # TODO: SEND NOTIFICATION TO PASSENGER

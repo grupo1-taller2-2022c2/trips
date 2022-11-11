@@ -2,6 +2,7 @@ from typing import Union
 import datetime
 from sqlalchemy.sql import func
 import app.models.trips_models as destination_models
+from app.models.drivers_models import DriverLocation
 from app.models.trips_models import *
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
@@ -57,7 +58,7 @@ def create_trip_info(src_address, src_number, dst_address, dst_number, passenger
         db.add(db_trip)
         db.commit()
         db.refresh(db_trip)
-        return db_trip.id
+        return db_trip
     except Exception:
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -67,6 +68,25 @@ def get_trip_from_id(trip_id: int, db: Session):
     if not db_trip:
         raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
     return db_trip
+
+
+def gat_drivers_assigned_trip_db(driveremail, db: Session):
+    db_trip = db.query(DriverLocation).filter(DriverLocation.email == driveremail).first()
+    if not db_trip:
+        raise HTTPException(status_code=404, detail=f"The driver hasn't any assigned trip yet")
+    return db_trip.state == "assigned"
+
+
+def assign_trip_db(trip_id: int, driver_email: str, db: Session):
+    db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not db_trip:
+        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+    try:
+        db_trip.driver_email = driver_email
+        db.commit()
+        return
+    except Exception as _:
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 def accept_trip_db(trip_id: int, driver_email: str, db: Session):

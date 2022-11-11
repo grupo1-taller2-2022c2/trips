@@ -28,6 +28,11 @@ def gat_drivers_last_location(driveremail: str, db: Session = Depends(get_db)):
     return get_driver_location_by_email(driveremail, db)
 
 
+@router.get("/assigned_trip/{driveremail}", status_code=status.HTTP_200_OK)
+def gat_drivers_assigned_trip(driveremail: str, db: Session = Depends(get_db)):
+    return gat_drivers_assigned_trip_db(driveremail, db)
+
+
 def calculate_distance(src_address, src_number, dst_address, dst_number):
     coord1 = get_latitude_and_longitude(src_address, src_number)
     coord2 = get_latitude_and_longitude(dst_address, dst_number)
@@ -42,6 +47,6 @@ def get_latitude_and_longitude(street_address: str, street_num: int):
     response = requests.get(url).json()
 
     if len(response) != 0:
-        return response.json()[0]["lat"], response.json()[0]["lon"]
+        return response[0]["lat"], response[0]["lon"]
     else:
         return None
