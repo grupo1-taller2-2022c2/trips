@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
-from app.cruds.drivers_cruds import change_driver_state, get_driver_location_by_email
+from app.cruds.drivers_cruds import change_driver_state, get_driver_location_by_email, save_drivers_assigned_trip_db, \
+    delete_drivers_assigned_trip_db
 from app.cruds.trips_cruds import *
 from sqlalchemy.orm import Session
 from starlette import status
@@ -103,6 +104,7 @@ def create_trip_and_driver_lookup(trip: TripCreate, db: Session = Depends(get_db
             return trip_db.id, None
         assign_trip_db(trip_db.id, driver_info["email"], db)
         change_driver_state(driver_info["email"], "assigned", db)
+        save_drivers_assigned_trip_db(driver_info["email"], trip_db.id, db)
         return trip_db.id, driver_info
     raise HTTPException(status_code=response.status_code,
                         detail=response.json()['detail'])
@@ -118,11 +120,13 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
     if trip.status == "Accept":
         accept_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "driving", db)
+        delete_drivers_assigned_trip_db(trip.driver_email, db)
         # TODO: SEND NOTIFICATION TO PASSENGER
         return {"message": "Trip accepted"}
     if trip.status == "Deny":
         deny_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "free", db)
+        delete_drivers_assigned_trip_db(trip.driver_email, db)
         # TODO: SEND NOTIFICATION TO PASSENGER
         return {"message": "Trip denied"}
     if trip.status == "Initialize":
@@ -131,6 +135,7 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
         check_distance(driver_db.street_name, driver_db.street_num, trip_db.src_address, trip_db.src_number)
         initialize_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "driving", db)
+        delete_drivers_assigned_trip_db(trip.driver_email, db)
         # TODO: SEND NOTIFICATION TO PASSENGER
         return {"message": "Trip initialized"}
     if trip.status == "Finalize":
@@ -139,6 +144,7 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
         check_distance(driver_db.street_name, driver_db.street_num, trip_db.dst_address, trip_db.dst_number)
         finalize_trip_db(trip.trip_id, db)
         change_driver_state(trip.driver_email, "free", db)
+        delete_drivers_assigned_trip_db(trip.driver_email, db)
         # TODO: SEND NOTIFICATION TO PASSENGER
         return {"message": "Trip finalized"}
     raise HTTPException(status_code=400, detail="The valid status are: Accept, Deny, Initialize, Finalize")

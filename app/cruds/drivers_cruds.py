@@ -59,3 +59,35 @@ def change_driver_state(driver_email: str, state: str, db: Session):
         return
     except Exception as _:
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+def save_drivers_assigned_trip_db(driveremail, trip_id, db: Session):
+    db_trip = DriverAssignedTrip(
+        email=driveremail,
+        trip_id=trip_id
+    )
+    try:
+        db.add(db_trip)
+        db.commit()
+        db.refresh(db_trip)
+    except Exception:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+def get_drivers_assigned_trip_db(driveremail, db: Session):
+    db_trip = db.query(DriverAssignedTrip).filter(DriverAssignedTrip.email == driveremail).first()
+    if not db_trip:
+        raise HTTPException(status_code=404, detail=f"The driver hasn't any assigned trip yet")
+    return db_trip.trip_id
+
+
+def delete_drivers_assigned_trip_db(driveremail, db: Session):
+    db_trip = db.query(DriverAssignedTrip).filter(DriverAssignedTrip.email == driveremail).first()
+    if not db_trip:
+        raise HTTPException(status_code=404, detail="The driver doesn't have any assigned trip")
+    try:
+        db.delete(db_trip)
+        db.commit()
+        return
+    except Exception as _:
+        raise HTTPException(status_code=500, detail="Internal server error")

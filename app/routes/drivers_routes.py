@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.cruds.drivers_cruds import save_driver_location_db, get_driver_location_by_email, \
-    delete_drivers_last_location_db
+    delete_drivers_last_location_db, get_drivers_assigned_trip_db
 from app.cruds.trips_cruds import *
 from sqlalchemy.orm import Session
 from starlette import status
@@ -36,7 +36,7 @@ def delete_drivers_last_location(driveremail: DriverLocationDelete, db: Session 
 
 @router.get("/assigned_trip/{driveremail}", status_code=status.HTTP_200_OK)
 def gat_drivers_assigned_trip(driveremail: str, db: Session = Depends(get_db)):
-    return gat_drivers_assigned_trip_db(driveremail, db)
+    return get_drivers_assigned_trip_db(driveremail, db)
 
 
 def calculate_distance(src_address, src_number, dst_address, dst_number):

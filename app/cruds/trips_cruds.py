@@ -70,13 +70,6 @@ def get_trip_from_id(trip_id: int, db: Session):
     return db_trip
 
 
-def gat_drivers_assigned_trip_db(driveremail, db: Session):
-    db_trip = db.query(DriverLocation).filter(DriverLocation.email == driveremail).first()
-    if not db_trip:
-        raise HTTPException(status_code=404, detail=f"The driver hasn't any assigned trip yet")
-    return db_trip.state == "assigned"
-
-
 def assign_trip_db(trip_id: int, driver_email: str, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not db_trip:
