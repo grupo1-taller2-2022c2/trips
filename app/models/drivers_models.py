@@ -8,3 +8,9 @@ class DriverLocation(Base):
     street_name = Column(String[50])
     street_num = Column(Integer)
     state = Column(String[50])
+
+
+class DriverAssignedTrip(Base):
+    __tablename__ = 'DriversAssignedTrip'
+    email = Column(String[50], primary_key=True)
+    trip_id = Column(Integer)

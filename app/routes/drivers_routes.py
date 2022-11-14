@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
-from app.cruds.drivers_cruds import save_driver_location_db, get_driver_location_by_email
+from app.cruds.drivers_cruds import save_driver_location_db, get_driver_location_by_email, \
+    delete_drivers_last_location_db, get_drivers_assigned_trip_db
 from app.cruds.trips_cruds import *
 from sqlalchemy.orm import Session
 from starlette import status
@@ -8,9 +9,7 @@ from starlette.exceptions import HTTPException
 from app.database import get_db
 import requests
 import os
-
-from app.routes.notifications_routes import send_push_message
-from app.schemas.drivers_schemas import DriverLocationSchema
+from app.schemas.drivers_schemas import DriverLocationSchema, DriverLocationDelete
 import geopy.distance
 
 router = APIRouter()
@@ -25,29 +24,19 @@ def save_last_location(driver: DriverLocationSchema, db: Session = Depends(get_d
     return {"message": "Saved successfully"}
 
 
-@router.get("/driver_lookup/", status_code=status.HTTP_200_OK)
-def look_for_driver(trip_id: int, db: Session = Depends(get_db)):
-    url = url_base + "/drivers/all_available"
-    db_trip = get_trip_from_id(trip_id, db)
-    response = requests.get(url=url)
-    if response.ok:
-        distance = 0
-        driver_info = None
-        for driver in response.json():
-            driver_db = get_driver_location_by_email(driver["email"], db)
-            if (not driver_db) or (driver_db.state == "driving"):
-                continue
-            new_distance = calculate_distance(db_trip.src_address, db_trip.src_number, driver_db.street_name, driver_db.street_num)
-            if (new_distance < distance) or (driver_info is None):
-                distance = new_distance
-                driver_info = driver
-        if driver_info:
-            send_push_message(email=driver_info["email"], title="Trip Request",
-                              message=f"You-ve received a trip request from the passenger {db_trip.passenger_email}.",
-                              db=db, extra={"trip_id": trip_id})
-        return driver_info
-    raise HTTPException(status_code=response.status_code,
-                        detail=response.json()['detail'])
+@router.get("/last_location/{driveremail}", status_code=status.HTTP_200_OK)
+def gat_drivers_last_location(driveremail: str, db: Session = Depends(get_db)):
+    return get_driver_location_by_email(driveremail, db)
+
+
+@router.delete("/last_location/", status_code=status.HTTP_200_OK)
+def delete_drivers_last_location(driveremail: DriverLocationDelete, db: Session = Depends(get_db)):
+    return delete_drivers_last_location_db(driveremail.email, db)
+
+
+@router.get("/assigned_trip/{driveremail}", status_code=status.HTTP_200_OK)
+def gat_drivers_assigned_trip(driveremail: str, db: Session = Depends(get_db)):
+    return get_drivers_assigned_trip_db(driveremail, db)
 
 
 def calculate_distance(src_address, src_number, dst_address, dst_number):
@@ -61,9 +50,9 @@ def get_latitude_and_longitude(street_address: str, street_num: int):
     country = "Argentina"
     url = f"https://nominatim.openstreetmap.org/?addressdetails=1&street={street_address}+{street_num}&city={city}&country={country}&format=json&limit=1"
 
-    response = requests.get(url)
+    response = requests.get(url).json()
 
-    if response.ok:
-        return response.json()[0]["lat"], response.json()[0]["lon"]
+    if len(response) != 0:
+        return response[0]["lat"], response[0]["lon"]
     else:
         return None
