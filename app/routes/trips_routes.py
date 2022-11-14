@@ -12,6 +12,7 @@ import os
 from typing import Union
 
 from app.routes.drivers_routes import calculate_distance
+from app.routes.notifications_routes import send_push_message
 from app.schemas.trips_schemas import TripState, TripCreate, LocationCreate
 
 router = APIRouter()
@@ -98,10 +99,11 @@ def create_trip_and_driver_lookup(trip: TripCreate, db: Session = Depends(get_db
             if (new_distance < distance) or (driver_info is None):
                 distance = new_distance
                 driver_info = driver
-        # TODO: send notification to driver
-        # TODO: maybe assign trip to driver
         if not driver_info:
             return trip_db.id, None
+        send_push_message(email=driver_info["email"], title="Trip Request",
+                          message=f"You-ve received a trip request from the passenger {trip.passenger_email}.",
+                          db=db, extra={"trip_id": trip_db.id})
         assign_trip_db(trip_db.id, driver_info["email"], db)
         change_driver_state(driver_info["email"], "assigned", db)
         save_drivers_assigned_trip_db(driver_info["email"], trip_db.id, db)
@@ -121,13 +123,13 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
         accept_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "driving", db)
         delete_drivers_assigned_trip_db(trip.driver_email, db)
-        # TODO: SEND NOTIFICATION TO PASSENGER
+        send_push_message(email=trip.passenger_email, title="Trip Accepted", message="The driver has accepted the trip.", db=db)
         return {"message": "Trip accepted"}
     if trip.status == "Deny":
         deny_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "free", db)
         delete_drivers_assigned_trip_db(trip.driver_email, db)
-        # TODO: SEND NOTIFICATION TO PASSENGER
+        send_push_message(email=trip.passenger_email, title="Trip Denied", message="The driver has denied the trip.", db=db)
         return {"message": "Trip denied"}
     if trip.status == "Initialize":
         driver_db = get_driver_location_by_email(trip.driver_email, db)
@@ -136,7 +138,7 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
         initialize_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "driving", db)
         delete_drivers_assigned_trip_db(trip.driver_email, db)
-        # TODO: SEND NOTIFICATION TO PASSENGER
+        send_push_message(email=trip.passenger_email, title="Trip Initialized", message="The driver has arrived.", db=db)
         return {"message": "Trip initialized"}
     if trip.status == "Finalize":
         driver_db = get_driver_location_by_email(trip.driver_email, db)
@@ -145,7 +147,7 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
         finalize_trip_db(trip.trip_id, db)
         change_driver_state(trip.driver_email, "free", db)
         delete_drivers_assigned_trip_db(trip.driver_email, db)
-        # TODO: SEND NOTIFICATION TO PASSENGER
+        send_push_message(email=trip.passenger_email, title="Trip Finalized", message="The trip has finalized.", db=db)
         return {"message": "Trip finalized"}
     raise HTTPException(status_code=400, detail="The valid status are: Accept, Deny, Initialize, Finalize")
 
