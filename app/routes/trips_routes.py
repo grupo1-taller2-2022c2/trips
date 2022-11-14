@@ -1,3 +1,4 @@
+from app.cruds.wallets_cruds import can_pay_trip, make_payment
 from fastapi import APIRouter, Depends
 
 from app.cruds.drivers_cruds import change_driver_state, get_driver_location_by_email, save_drivers_assigned_trip_db, \
@@ -66,7 +67,8 @@ def get_all_passenger_saved_location(useremail: str, db: Session = Depends(get_d
 
 @router.post("/saved_location/", status_code=status.HTTP_201_CREATED)
 def add_passenger_saved_location(location: LocationCreate, db: Session = Depends(get_db)):
-    create_location_for_user(location.email, location.location, location.street_name, location.street_num, db)
+    create_location_for_user(
+        location.email, location.location, location.street_name, location.street_num, db)
     return {"message": "Saved successfully"}
 
 
@@ -95,7 +97,8 @@ def create_trip_and_driver_lookup(trip: TripCreate, db: Session = Depends(get_db
             driver_db = get_driver_location_by_email(driver["email"], db)
             if (not driver_db) or (driver_db.state == "driving"):
                 continue
-            new_distance = calculate_distance(trip.src_address, trip.src_number, driver_db.street_name, driver_db.street_num)
+            new_distance = calculate_distance(
+                trip.src_address, trip.src_number, driver_db.street_name, driver_db.street_num)
             if (new_distance < distance) or (driver_info is None):
                 distance = new_distance
                 driver_info = driver
@@ -123,33 +126,40 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
         accept_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "driving", db)
         delete_drivers_assigned_trip_db(trip.driver_email, db)
-        send_push_message(email=trip.passenger_email, title="Trip Accepted", message="The driver has accepted the trip.", db=db)
+        send_push_message(email=trip.passenger_email, title="Trip Accepted",
+                          message="The driver has accepted the trip.", db=db)
         return {"message": "Trip accepted"}
     if trip.status == "Deny":
         deny_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "free", db)
         delete_drivers_assigned_trip_db(trip.driver_email, db)
-        send_push_message(email=trip.passenger_email, title="Trip Denied", message="The driver has denied the trip.", db=db)
+        send_push_message(email=trip.passenger_email, title="Trip Denied",
+                          message="The driver has denied the trip.", db=db)
         return {"message": "Trip denied"}
     if trip.status == "Initialize":
         driver_db = get_driver_location_by_email(trip.driver_email, db)
         trip_db = get_trip_from_id(trip.trip_id, db)
-        check_distance(driver_db.street_name, driver_db.street_num, trip_db.src_address, trip_db.src_number)
+        check_distance(driver_db.street_name, driver_db.street_num,
+                       trip_db.src_address, trip_db.src_number)
         initialize_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "driving", db)
         delete_drivers_assigned_trip_db(trip.driver_email, db)
-        send_push_message(email=trip.passenger_email, title="Trip Initialized", message="The driver has arrived.", db=db)
+        send_push_message(email=trip.passenger_email, title="Trip Initialized",
+                          message="The driver has arrived.", db=db)
         return {"message": "Trip initialized"}
     if trip.status == "Finalize":
         driver_db = get_driver_location_by_email(trip.driver_email, db)
         trip_db = get_trip_from_id(trip.trip_id, db)
-        check_distance(driver_db.street_name, driver_db.street_num, trip_db.dst_address, trip_db.dst_number)
+        check_distance(driver_db.street_name, driver_db.street_num,
+                       trip_db.dst_address, trip_db.dst_number)
         finalize_trip_db(trip.trip_id, db)
         change_driver_state(trip.driver_email, "free", db)
         delete_drivers_assigned_trip_db(trip.driver_email, db)
-        send_push_message(email=trip.passenger_email, title="Trip Finalized", message="The trip has finalized.", db=db)
+        send_push_message(email=trip.passenger_email, title="Trip Finalized",
+                          message="The trip has finalized.", db=db)
         return {"message": "Trip finalized"}
-    raise HTTPException(status_code=400, detail="The valid status are: Accept, Deny, Initialize, Finalize")
+    raise HTTPException(
+        status_code=400, detail="The valid status are: Accept, Deny, Initialize, Finalize")
 
 
 def address_exists(street_address: str, street_num: int):
@@ -168,4 +178,5 @@ def address_exists(street_address: str, street_num: int):
 def check_distance(address_1, number_1, address_2, number_2):
     distance = calculate_distance(address_1, number_1, address_2, number_2)
     if distance > 0.1:
-        raise HTTPException(status_code=400, detail="The driver has not arrived to the correct place")
+        raise HTTPException(
+            status_code=400, detail="The driver has not arrived to the correct place")
