@@ -32,7 +32,8 @@ def create_location_for_user(useremail, location, street_name, street_num, db: S
 
 
 def get_address_by_loc(useremail, loc, db: Session):
-    db_location = db.query(SavedLocation).filter(SavedLocation.email == useremail).filter(SavedLocation.location == loc).first()
+    db_location = db.query(SavedLocation).filter(
+        SavedLocation.email == useremail).filter(SavedLocation.location == loc).first()
     return db_location
 
 
@@ -45,14 +46,14 @@ def create_trip_info(src_address, src_number, dst_address, dst_number, passenger
     if trip_type is None:
         trip_type = "Regular"
     db_trip = Trip(
-        src_address = src_address,
-        src_number = src_number,
-        dst_address = dst_address,
-        dst_number = dst_number,
-        passenger_email = passenger_email,
-        price = cost,
-        type = trip_type,
-        state = "Not initialized",
+        src_address=src_address,
+        src_number=src_number,
+        dst_address=dst_address,
+        dst_number=dst_number,
+        passenger_email=passenger_email,
+        price=cost,
+        type=trip_type,
+        state="Not initialized",
     )
     try:
         db.add(db_trip)
@@ -66,14 +67,16 @@ def create_trip_info(src_address, src_number, dst_address, dst_number, passenger
 def get_trip_from_id(trip_id: int, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not db_trip:
-        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+        raise HTTPException(
+            status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
     return db_trip
 
 
 def assign_trip_db(trip_id: int, driver_email: str, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not db_trip:
-        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+        raise HTTPException(
+            status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
     try:
         db_trip.driver_email = driver_email
         db.commit()
@@ -85,9 +88,11 @@ def assign_trip_db(trip_id: int, driver_email: str, db: Session):
 def accept_trip_db(trip_id: int, driver_email: str, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not db_trip:
-        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+        raise HTTPException(
+            status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
     if db_trip.state != "Not initialized":
-        raise HTTPException(status_code=400, detail=f"The trip can't be accepted")
+        raise HTTPException(
+            status_code=400, detail=f"The trip can't be accepted")
     try:
         db_trip.driver_email = driver_email
         db_trip.state = "Accepted"
@@ -100,9 +105,11 @@ def accept_trip_db(trip_id: int, driver_email: str, db: Session):
 def initialize_trip_db(trip_id: int, driver_email: str, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not db_trip:
-        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+        raise HTTPException(
+            status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
     if db_trip.state != "Accepted":
-        raise HTTPException(status_code=400, detail=f"The trip can't be initialized")
+        raise HTTPException(
+            status_code=400, detail=f"The trip can't be initialized")
     try:
         db_trip.date = func.now()
         db_trip.state = "In course"
@@ -115,9 +122,11 @@ def initialize_trip_db(trip_id: int, driver_email: str, db: Session):
 def deny_trip_db(trip_id: int, driver_email: str, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not db_trip:
-        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+        raise HTTPException(
+            status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
     if db_trip.state != "Not initialized":
-        raise HTTPException(status_code=400, detail=f"The trip can't be denied")
+        raise HTTPException(
+            status_code=400, detail=f"The trip can't be denied")
     try:
         db_trip.driver_email = driver_email
         db_trip.date = func.now()
@@ -131,12 +140,24 @@ def deny_trip_db(trip_id: int, driver_email: str, db: Session):
 def finalize_trip_db(trip_id: int, db: Session):
     db_trip = db.query(Trip).filter(Trip.id == trip_id).first()
     if not db_trip:
-        raise HTTPException(status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
+        raise HTTPException(
+            status_code=404, detail=f"The trip with id {trip_id} doesn't exist")
     if db_trip.state != "In course":
-        raise HTTPException(status_code=400, detail=f"The trip can't be finalized")
+        raise HTTPException(
+            status_code=400, detail=f"The trip can't be finalized")
     try:
         db_trip.state = "Completed"
         db.commit()
         return db_trip.passenger_email
     except Exception as _:
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+def delete_added_trips_info(db: Session):
+    try:
+        db.query(Trip).delete()
+        db.query(SavedLocation).delete()
+        db.commit()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail="Could not delete trips and saved locations: " + e.__str__)

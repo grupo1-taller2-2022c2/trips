@@ -22,7 +22,8 @@ def save_user_token(token, email, db: Session):
 def delete_token(email, db: Session):
     db_token = db.query(Token).filter(Token.email == email).first()
     if not db_token:
-        raise HTTPException(status_code=404, detail="The user doesn't have a valid token")
+        raise HTTPException(
+            status_code=404, detail="The user doesn't have a valid token")
     try:
         db.delete(db_token)
         db.commit()
@@ -35,5 +36,15 @@ def delete_token(email, db: Session):
 def get_token_from_db(email, db: Session):
     db_token = db.query(Token).filter(Token.email == email).first()
     if not db_token:
-        raise HTTPException(status_code=404, detail="The user doesn't have a valid token")
+        raise HTTPException(
+            status_code=404, detail="The user doesn't have a valid token")
     return db_token.token
+
+
+def delete_added_notifications_info(db: Session):
+    try:
+        db.query(Token).delete()
+        db.commit()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail="Could not delete trips tokens: " + e.__str__)
