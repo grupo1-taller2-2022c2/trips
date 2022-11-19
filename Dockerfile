@@ -5,6 +5,8 @@ COPY ./alembic /app/alembic
 COPY ./alembic.ini /app/
 
 COPY ./requirements.txt /app/requirements.txt
+COPY ./tests /app/tests
+COPY ./run_tests.sh /app/
 
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 RUN pip install --no-cache-dir geopy exponent_server_sdk

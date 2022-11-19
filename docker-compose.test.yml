@@ -1,0 +1,38 @@
+version: "3.3"
+services:
+
+  trips_backend:
+    build: .
+    container_name: trips_container
+    stdin_open: true 
+    tty: true
+    entrypoint: ../start-reload.sh
+    links:
+      - trips_dev_db
+    environment:
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:grupo1@trips_db_container:5432/postgres
+      - POSTGRES_PASSWORD=grupo1
+      - LOG_LEVEL=debug
+      - USERS_BASE_URL=http://users_fake.com:3000
+      - WALLETS_BASE_URL=http://wallets_fake.com:3000
+    depends_on:
+      - trips_dev_db
+    networks:
+      - my_network
+
+  trips_dev_db:
+    image: postgres
+    container_name: trips_db_container
+    environment:
+      - POSTGRES_PASSWORD=grupo1
+    expose:
+      - 5432
+    ports:
+      - 6544:5432
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge
