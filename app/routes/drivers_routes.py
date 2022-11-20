@@ -36,7 +36,9 @@ def delete_drivers_last_location(driveremail: DriverLocationDelete, db: Session 
 
 @router.get("/assigned_trip/{driveremail}", status_code=status.HTTP_200_OK)
 def gat_drivers_assigned_trip(driveremail: str, db: Session = Depends(get_db)):
-    return get_drivers_assigned_trip_db(driveremail, db)
+    trip_id = get_drivers_assigned_trip_db(driveremail, db)
+    passenger_email = get_trip_from_id(trip_id, db).passenger_email
+    return {"trip_id": trip_id, "passenger": passenger_email}
 
 
 def calculate_distance(src_address, src_number, dst_address, dst_number):
