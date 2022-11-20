@@ -123,17 +123,17 @@ def get_trip(trip_id: int, db: Session = Depends(get_db)):
 @router.patch("/", status_code=status.HTTP_200_OK)
 def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
     if trip.status == "Accept":
-        accept_trip_db(trip.trip_id, trip.driver_email, db)
+        passenger_email = accept_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "driving", db)
         delete_drivers_assigned_trip_db(trip.driver_email, db)
-        send_push_message(email=trip.passenger_email, title="Trip Accepted",
+        send_push_message(email=passenger_email, title="Trip Accepted",
                           message="The driver has accepted the trip.", db=db)
         return {"message": "Trip accepted"}
     if trip.status == "Deny":
-        deny_trip_db(trip.trip_id, trip.driver_email, db)
+        passenger_email = deny_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "free", db)
         delete_drivers_assigned_trip_db(trip.driver_email, db)
-        send_push_message(email=trip.passenger_email, title="Trip Denied",
+        send_push_message(email=passenger_email, title="Trip Denied",
                           message="The driver has denied the trip.", db=db)
         return {"message": "Trip denied"}
     if trip.status == "Initialize":
@@ -141,10 +141,9 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
         trip_db = get_trip_from_id(trip.trip_id, db)
         check_distance(driver_db.street_name, driver_db.street_num,
                        trip_db.src_address, trip_db.src_number)
-        initialize_trip_db(trip.trip_id, trip.driver_email, db)
+        passenger_email = initialize_trip_db(trip.trip_id, trip.driver_email, db)
         change_driver_state(trip.driver_email, "driving", db)
-        delete_drivers_assigned_trip_db(trip.driver_email, db)
-        send_push_message(email=trip.passenger_email, title="Trip Initialized",
+        send_push_message(email=passenger_email, title="Trip Initialized",
                           message="The driver has arrived.", db=db)
         return {"message": "Trip initialized"}
     if trip.status == "Finalize":
@@ -152,10 +151,9 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
         trip_db = get_trip_from_id(trip.trip_id, db)
         check_distance(driver_db.street_name, driver_db.street_num,
                        trip_db.dst_address, trip_db.dst_number)
-        finalize_trip_db(trip.trip_id, db)
+        passenger_email = finalize_trip_db(trip.trip_id, db)
         change_driver_state(trip.driver_email, "free", db)
-        delete_drivers_assigned_trip_db(trip.driver_email, db)
-        send_push_message(email=trip.passenger_email, title="Trip Finalized",
+        send_push_message(email=passenger_email, title="Trip Finalized",
                           message="The trip has finalized.", db=db)
         return {"message": "Trip finalized"}
     raise HTTPException(
