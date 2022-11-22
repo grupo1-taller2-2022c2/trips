@@ -43,7 +43,7 @@ def gat_drivers_assigned_trip(driveremail: str, db: Session = Depends(get_db)):
     url = url_base + "/passengers/" + passenger_email
     response = requests.get(url=url)
     if response.ok:
-        return {"trip_id": trip_id, "passenger": response.json()}
+        return {"trip_id": trip_id, "passenger_email": passenger_email, "passenger": response.json()}
     delete_drivers_assigned_trip_db(driveremail, db)
     send_push_message(email=passenger_email, title="Trip Cancelled",
                       message=f"The trip with id {trip_id} was cancelled due to internal error.", db=db)
