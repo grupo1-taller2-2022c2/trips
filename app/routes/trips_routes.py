@@ -27,9 +27,13 @@ class Pricing:
         self.base = 400
         self.distance = 0.1
         self.duration = 0.1
+        self.day_of_week = {}
+        self.busy_hours = []
+        self.busy_hours_extra = 0.1
+        self.passenger_rating = 0.1
 
     def calculate(self, distance, duration):
-        return self.base + self.distance * distance + self.duration * duration
+        return self.base + (self.distance * distance) + (self.duration * duration)
 
 
 PRICING = Pricing()
@@ -161,7 +165,7 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
 
 
 def address_exists(street_address: str, street_num: int):
-    city = "Buenos Aires"
+    """city = "Buenos Aires"
     country = "Argentina"
     url = f"https://nominatim.openstreetmap.org/?addressdetails=1&street={street_address}+{street_num}&city={city}&country={country}&format=json&limit=1"
 
@@ -170,7 +174,8 @@ def address_exists(street_address: str, street_num: int):
     if len(response) != 0:
         return True, response[0]
     else:
-        return False, None
+        return False, None"""
+    return True
 
 
 def check_distance(address_1, number_1, address_2, number_2):

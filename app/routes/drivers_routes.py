@@ -9,6 +9,7 @@ from starlette.exceptions import HTTPException
 from app.database import get_db
 import requests
 import os
+import googlemaps
 
 from app.routes.notifications_routes import send_push_message
 from app.schemas.drivers_schemas import DriverLocationSchema, DriverLocationDelete
@@ -58,11 +59,6 @@ def calculate_distance(src_address, src_number, dst_address, dst_number):
 def get_latitude_and_longitude(street_address: str, street_num: int):
     city = "Buenos Aires"
     country = "Argentina"
-    url = f"https://nominatim.openstreetmap.org/?addressdetails=1&street={street_address}+{street_num}&city={city}&country={country}&format=json&limit=1"
-
-    response = requests.get(url).json()
-
-    if len(response) != 0:
-        return response[0]["lat"], response[0]["lon"]
-    else:
-        return None
+    gmaps = googlemaps.Client(key='AIzaSyD3H-dhvbdSHcltS1cJQp10oty-xO9faPE')
+    geocode_result = gmaps.geocode(f'{street_num} {street_address}, {city}, {country}')
+    return geocode_result[0]["geometry"]["location"]["lat"], geocode_result[0]["geometry"]["location"]["lng"]
