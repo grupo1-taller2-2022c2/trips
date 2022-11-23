@@ -1,11 +1,17 @@
 name: Deploy to heroku
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Tests"]
     branches: [main]
+    types:
+      - completed
 
 jobs:
   build:
+    # Se corre si el workflow Tests concluyo con existo
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
