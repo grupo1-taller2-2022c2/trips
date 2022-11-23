@@ -79,10 +79,10 @@ def add_passenger_saved_location(location: LocationCreate, db: Session = Depends
 @router.get("/cost/", status_code=status.HTTP_200_OK)
 def calculate_cost(src_address: str, src_number: int, dst_address: str, dst_number: int, passenger_email: str, duration: float,
                    distance: float, trip_type: Union[str, None] = None, db: Session = Depends(get_db)):
-    address_exist, address = address_exists(src_address, src_number)
-    if not address_exist:
-        raise HTTPException(
-            status_code=404, detail="The location isn't valid")
+    #address_exist, address = address_exists(src_address, src_number)
+    #if not address_exist:
+    #    raise HTTPException(
+    #        status_code=404, detail="The location isn't valid")
     price = PRICING.calculate(distance, duration)
     return {"price": price}
 
