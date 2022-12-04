@@ -28,13 +28,13 @@ url_base = os.getenv("USERS_BASE_URL")
 
 class Pricing:
     def __init__(self):
-        self.base = 400
-        self.distance = 0.1
-        self.duration = 0.1
+        self.base = 0.0001
+        self.distance = 0.0000001
+        self.duration = 0.00001
         self.day_of_week = {}
         self.busy_hours = []
-        self.busy_hours_extra = 0.1
-        self.passenger_rating = 0.1
+        self.busy_hours_extra = 0.00001
+        self.passenger_rating = 0.00001
 
     def calculate(self, distance, duration):
         return self.base + (self.distance * distance) + (self.duration * duration)
@@ -217,6 +217,8 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
             trip_db.dst_address,
             trip_db.dst_number,
         )
+        make_payment(trip_db.passenger_email, trip_db.driver_email, trip_db.price)
+
         passenger_email = finalize_trip_db(trip.trip_id, db)
         change_driver_state(trip.driver_email, "free", db)
         send_push_message(
