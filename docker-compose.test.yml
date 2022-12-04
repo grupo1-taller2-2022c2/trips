@@ -6,7 +6,6 @@ services:
     container_name: trips_container
     stdin_open: true 
     tty: true
-    entrypoint: ../start-reload.sh
     links:
       - trips_dev_db
     environment:
