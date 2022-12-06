@@ -1,6 +1,5 @@
 from app.cruds.wallets_cruds import can_pay_trip, make_payment
 from fastapi import APIRouter, Depends
-
 from app.cruds.drivers_cruds import (
     change_driver_state,
     get_driver_location_by_email,
@@ -18,26 +17,14 @@ from typing import Union
 
 from app.routes.drivers_routes import calculate_distance
 from app.routes.notifications_routes import send_push_message
-from app.schemas.trips_schemas import TripState, TripCreate, LocationCreate
+from app.schemas.trips_schemas import TripState, TripCreate, LocationCreate, PriceChange
+
+from app.utils.pricing import Pricing
 
 router = APIRouter()
 
 
 url_base = os.getenv("USERS_BASE_URL")
-
-
-class Pricing:
-    def __init__(self):
-        self.base = 0.0001
-        self.distance = 0.0000001
-        self.duration = 0.00001
-        self.day_of_week = {}
-        self.busy_hours = []
-        self.busy_hours_extra = 0.00001
-        self.passenger_rating = 0.00001
-
-    def calculate(self, distance, duration):
-        return self.base + (self.distance * distance) + (self.duration * duration)
 
 
 PRICING = Pricing()
@@ -96,26 +83,37 @@ def calculate_cost(
     passenger_email: str,
     duration: float,
     distance: float,
-    trip_type: Union[str, None] = None,
-    db: Session = Depends(get_db),
+    trip_type: Union[str, None] = None
 ):
-    # address_exist, address = address_exists(src_address, src_number)
-    # if not address_exist:
-    #    raise HTTPException(
-    #        status_code=404, detail="The location isn't valid")
-    price = PRICING.calculate(distance, duration)
+    url = url_base + "/passengers/" + passenger_email
+    response = requests.get(url=url)
+    if response.ok:
+        price = PRICING.calculate(distance, duration, float(response.json()["ratings"]))
+    else:
+        raise HTTPException(status_code=response.status_code, detail=response.json()["detail"])
     return {"price": price}
+
+
+@router.patch("/cost/", status_code=status.HTTP_200_OK)
+def modify_cost_rule(price_change: PriceChange):
+    PRICING.change_pricing(price_change)
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_trip_and_driver_lookup(trip: TripCreate, db: Session = Depends(get_db)):
-    url = url_base + "/drivers/all_available"
+    url = url_base + "/passengers/" + trip.passenger_email
     response = requests.get(url=url)
-    price = PRICING.calculate(trip.distance, trip.duration)
+    if response.ok:
+        price = PRICING.calculate(trip.distance, trip.duration, float(response.json()["ratings"]))
+    else:
+        raise HTTPException(status_code=response.status_code, detail=response.json()["detail"])
 
     if not can_pay_trip(trip.passenger_email, price):
         message = "Not enough balance in wallet to pay trip"
         raise HTTPException(status_code=400, detail=message)
+
+    url = url_base + "/drivers/all_available"
+    response = requests.get(url=url)
 
     trip_db = create_trip_info(
         trip.src_address,
