@@ -7,6 +7,9 @@ from fastapi import HTTPException
 
 
 def save_user_token(token, email, db: Session):
+    db_token = db.query(Token).filter(Token.email == email).first()
+    if db_token:
+        raise HTTPException(status_code=409, detail="The user already has a token")
     db_token = Token(
         email=email,
         token=token

@@ -25,13 +25,13 @@ router = APIRouter()
 @router.post("/token/", status_code=status.HTTP_201_CREATED)
 def save_expo_token(token: ExpoToken, db: Session = Depends(get_db)):
     save_user_token(token.token, token.email, db)
-    return {"message": "Saved Succesfully"}
+    return {"message": "Saved Successfully"}
 
 
 @router.delete("/token/{email}", status_code=status.HTTP_202_ACCEPTED)
 def delete_expo_token(email: str, db: Session = Depends(get_db)):
     delete_token(email, db)
-    return {"message": "Deleted Succesfully"}
+    return {"message": "Deleted Successfully"}
 
 
 def send_push_message(email, title, message, db: Session, extra=None):
