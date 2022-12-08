@@ -6,6 +6,16 @@ s = requests.Session()
 s.mount('mock://', adapter)
 
 
+class ApiMock:
+    def __init__(self, json_value):
+        self.ok = True
+        self.text = str(json_value)
+        self.json_value = json_value
+
+    def json(self):
+        return self.json_value
+
+
 def test_address_validation_ok(client):
     with patch("app.routes.trips_routes.requests.get") as mock_get:
         # Mockeo la llamada a la api externa de Google
@@ -147,6 +157,53 @@ def test_create_trip_ok(client):
     assert response.json()[1] is None
 
 
+def test_create_trip_with_driver_ok(client):
+    with patch("app.routes.trips_routes.requests.get") as mock_get:
+        # Create a notif token for driver
+        token = {
+            "email": "test_driver@gmail.com",
+            "token": "test_token"
+        }
+
+        client.post(
+            "/notifications/token/",
+            json=token
+        )
+        # Mock api calls
+        mock_rating = ApiMock({"ratings": 5})
+        mock_id = ApiMock('139722651300288')
+        mock_balance = ApiMock({"balance": 1})
+        mock_driver = ApiMock([{"email": "test_driver@gmail.com"}])
+        mock_get.side_effect = [mock_rating, mock_id, mock_balance, mock_driver]
+
+        driver = {
+            "email": "test_driver@gmail.com",
+            "street_name": "paseo colon",
+            "street_num": 840
+        }
+        client.post(
+            "/drivers/last_location",
+            json=driver,
+        )
+        trip = {
+            "src_address": "paseo colon",
+            "src_number": 850,
+            "dst_address": "paseo colon",
+            "dst_number": 850,
+            "passenger_email": "test_email@gmail.com",
+            "duration": 1,
+            "distance": 1
+        }
+        response = client.post(
+            "/trips/",
+            json=trip
+        )
+
+    assert response.status_code == 201, response.text
+    assert response.json()[0] == 1
+    assert response.json()[1]["email"] == "test_driver@gmail.com"
+
+
 def test_get_trip_info_not_ok(client):
     with patch("app.routes.trips_routes.requests.get") as mock_get:
         mock_get.return_value.ok = True
@@ -159,7 +216,7 @@ def test_get_trip_info_not_ok(client):
     assert response.json()["detail"] == "The trip with id 1 doesn't exist"
 
 
-"""def test_get_trip_info_ok(client):
+def test_get_trip_info_ok(client):
     with patch("app.routes.trips_routes.requests.get") as mock_get:
         mock_get.return_value.ok = True
 
@@ -185,5 +242,5 @@ def test_get_trip_info_not_ok(client):
     assert response.json()["src_number"] == 850
     assert response.json()["dst_address"] == "paseo colon"
     assert response.json()["dst_number"] == 850
-    assert response.json()["passenger_email"] == "test_email@gmail.com"""
+    assert response.json()["passenger_email"] == "test_email@gmail.com"
 
