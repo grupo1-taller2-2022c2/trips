@@ -2,7 +2,7 @@ from unittest.mock import Mock, patch
 
 
 def test_save_last_location_ok(client):
-    with patch("app.routes.drivers_routes.requests.post") as mock_post:
+    with patch("app.routes.drivers_routes.requests.get") as mock_post:
         mock_post.return_value.ok = True
 
         driver = {
@@ -78,7 +78,7 @@ def test_update_last_location_ok(client):
 
 
 def test_delete_last_location_not_ok(client):
-    with patch("app.routes.drivers_routes.requests.delete") as mock_get:
+    with patch("app.routes.drivers_routes.requests.get") as mock_get:
         mock_get.return_value.ok = True
 
         driver = {
@@ -102,7 +102,7 @@ def test_delete_last_location_not_ok(client):
 
 
 def test_delete_last_location_ok(client):
-    with patch("app.routes.drivers_routes.requests.delete") as mock_get:
+    with patch("app.routes.drivers_routes.requests.get") as mock_get:
         mock_get.return_value.ok = True
 
         driver = {
