@@ -160,14 +160,9 @@ def test_create_trip_ok(client):
 def test_create_trip_with_driver_ok(client):
     with patch("app.routes.trips_routes.requests.get") as mock_get:
         # Create a notif token for driver
-        token = {
-            "email": "test_driver@gmail.com",
-            "token": "test_token"
-        }
-
         client.post(
             "/notifications/token/",
-            json=token
+            json={"email": "test_driver@gmail.com", "token": "test_token"}
         )
         # Mock api calls
         mock_rating = ApiMock({"ratings": 5})
@@ -176,15 +171,11 @@ def test_create_trip_with_driver_ok(client):
         mock_driver = ApiMock([{"email": "test_driver@gmail.com"}])
         mock_get.side_effect = [mock_rating, mock_id, mock_balance, mock_driver]
 
-        driver = {
-            "email": "test_driver@gmail.com",
-            "street_name": "paseo colon",
-            "street_num": 840
-        }
         client.post(
             "/drivers/last_location",
-            json=driver,
+            json={"email": "test_driver@gmail.com", "street_name": "paseo colon", "street_num": 840}
         )
+
         trip = {
             "src_address": "paseo colon",
             "src_number": 850,
@@ -244,3 +235,138 @@ def test_get_trip_info_ok(client):
     assert response.json()["dst_number"] == 850
     assert response.json()["passenger_email"] == "test_email@gmail.com"
 
+
+def test_accept_trip_ok(client):
+    with patch("app.routes.trips_routes.requests.get") as mock_get:
+        # Create a notif token
+        client.post(
+            "/notifications/token/",
+            json={"email": "test_driver@gmail.com", "token": "test_token"}
+        )
+        client.post(
+            "/notifications/token/",
+            json={"email": "test_email@gmail.com", "token": "test_token"}
+        )
+        # Mock api calls
+        mock_rating = ApiMock({"ratings": 5})
+        mock_id = ApiMock('139722651300288')
+        mock_balance = ApiMock({"balance": 1})
+        mock_driver = ApiMock([{"email": "test_driver@gmail.com"}])
+        mock_get.side_effect = [mock_rating, mock_id, mock_balance, mock_driver]
+
+        client.post(
+            "/drivers/last_location",
+            json={"email": "test_driver@gmail.com", "street_name": "paseo colon", "street_num": 840}
+        )
+        trip = {
+            "src_address": "paseo colon",
+            "src_number": 850,
+            "dst_address": "paseo colon",
+            "dst_number": 850,
+            "passenger_email": "test_email@gmail.com",
+            "duration": 1,
+            "distance": 1
+        }
+        client.post(
+            "/trips/",
+            json=trip
+        )
+        response = client.patch(
+            "/trips/",
+            json={"trip_id": 1, "driver_email": "test_driver@gmail.com", "status": "Accept"}
+        )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["message"] == "Trip accepted"
+
+
+def test_deny_trip_ok(client):
+    with patch("app.routes.trips_routes.requests.get") as mock_get:
+        # Create a notif token
+        client.post(
+            "/notifications/token/",
+            json={"email": "test_driver@gmail.com", "token": "test_token"}
+        )
+        client.post(
+            "/notifications/token/",
+            json={"email": "test_email@gmail.com", "token": "test_token"}
+        )
+        # Mock api calls
+        mock_rating = ApiMock({"ratings": 5})
+        mock_id = ApiMock('139722651300288')
+        mock_balance = ApiMock({"balance": 1})
+        mock_driver = ApiMock([{"email": "test_driver@gmail.com"}])
+        mock_get.side_effect = [mock_rating, mock_id, mock_balance, mock_driver]
+
+        client.post(
+            "/drivers/last_location",
+            json={"email": "test_driver@gmail.com", "street_name": "paseo colon", "street_num": 840}
+        )
+        trip = {
+            "src_address": "paseo colon",
+            "src_number": 850,
+            "dst_address": "paseo colon",
+            "dst_number": 850,
+            "passenger_email": "test_email@gmail.com",
+            "duration": 1,
+            "distance": 1
+        }
+        client.post(
+            "/trips/",
+            json=trip
+        )
+        response = client.patch(
+            "/trips/",
+            json={"trip_id": 1, "driver_email": "test_driver@gmail.com", "status": "Deny"}
+        )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["message"] == "Trip denied"
+
+
+def test_initialize_trip_ok(client):
+    with patch("app.routes.trips_routes.requests.get") as mock_get:
+        # Create a notif token
+        client.post(
+            "/notifications/token/",
+            json={"email": "test_driver@gmail.com", "token": "test_token"}
+        )
+        client.post(
+            "/notifications/token/",
+            json={"email": "test_email@gmail.com", "token": "test_token"}
+        )
+        # Mock api calls
+        mock_rating = ApiMock({"ratings": 5})
+        mock_id = ApiMock('139722651300288')
+        mock_balance = ApiMock({"balance": 1})
+        mock_driver = ApiMock([{"email": "test_driver@gmail.com"}])
+        mock_get.side_effect = [mock_rating, mock_id, mock_balance, mock_driver]
+
+        client.post(
+            "/drivers/last_location",
+            json={"email": "test_driver@gmail.com", "street_name": "paseo colon", "street_num": 840}
+        )
+        trip = {
+            "src_address": "paseo colon",
+            "src_number": 850,
+            "dst_address": "paseo colon",
+            "dst_number": 850,
+            "passenger_email": "test_email@gmail.com",
+            "duration": 1,
+            "distance": 1
+        }
+        client.post(
+            "/trips/",
+            json=trip
+        )
+        client.patch(
+            "/trips/",
+            json={"trip_id": 1, "driver_email": "test_driver@gmail.com", "status": "Accept"}
+        )
+        response = client.patch(
+            "/trips/",
+            json={"trip_id": 1, "driver_email": "test_driver@gmail.com", "status": "Initialize"}
+        )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["message"] == "Trip initialized"
