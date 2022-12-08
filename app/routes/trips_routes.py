@@ -233,17 +233,16 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
 
 
 def address_exists(street_address: str, street_num: int):
-    """city = "Buenos Aires"
+    city = "Buenos Aires"
     country = "Argentina"
     url = f"https://nominatim.openstreetmap.org/?addressdetails=1&street={street_address}+{street_num}&city={city}&country={country}&format=json&limit=1"
 
     response = requests.get(url).json()
 
     if len(response) != 0:
-        return True, response[0]
+        return True
     else:
-        return False, None"""
-    return True
+        return False
 
 
 def check_distance(address_1, number_1, address_2, number_2):
