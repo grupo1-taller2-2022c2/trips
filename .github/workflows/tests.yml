@@ -20,11 +20,25 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-      - name: Build containers
-        run: docker-compose -f docker-compose.test.yml build
-      - name: Run containers
-        run: docker-compose -f docker-compose.test.yml up -d
-      - name: Print ls
-        run: docker-compose -f docker-compose.test.yml exec -T trips_backend bash -c ls
-      - name: Run tests
-        run: docker-compose -f docker-compose.test.yml exec -T trips_backend bash ./run_tests.sh
+      - name: Tests
+        uses: cloudposse/github-action-docker-compose-test-run@main
+        with:
+          file: docker-compose.test.yml
+          service: trips_backend
+          command: run_tests.sh
+      - name: Comment coverage
+        uses: coroo/pytest-coverage-commentator@v1.0.2
+        with:
+          pytest-coverage: pytest-coverage.txt
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          directory: ./coverage/reports/
+          flags: unittests
+          env_vars: OS,PYTHON
+          name: codecov-umbrella
+          fail_ci_if_error: true
+          path_to_write_report: ./coverage/codecov_report.txt
+          verbose: true
