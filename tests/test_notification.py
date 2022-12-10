@@ -20,7 +20,7 @@ def test_save_token_ok(client):
     assert data["message"] == "Saved Successfully"
 
 
-def test_save_token_not_ok(client):
+def test_update_token_ok(client):
     with patch("app.routes.notifications_routes.requests.post") as mock_post:
         mock_post.return_value.ok = True
 
@@ -33,15 +33,17 @@ def test_save_token_not_ok(client):
             "/notifications/token/",
             json=token,
         )
-
+        new_token = {
+            "email": "test_email@gmail.com",
+            "token": "test_token_1"
+        }
         response = client.post(
             "/notifications/token/",
-            json=token,
+            json=new_token,
         )
 
-    assert response.status_code == 409, response.text
-    data = response.json()
-    assert data["detail"] == "The user already has a token"
+    assert response.status_code == 201
+    assert response.json()["message"] == "Saved Successfully"
 
 
 def test_delete_token_not_ok(client):
