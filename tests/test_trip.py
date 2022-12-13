@@ -370,3 +370,40 @@ def test_initialize_trip_ok(client):
 
     assert response.status_code == 200, response.text
     assert response.json()["message"] == "Trip initialized"
+
+
+def test_get_pricing_ok(client):
+    with patch("app.routes.trips_routes.requests.get") as mock_get:
+        mock_get.return_value.ok = True
+
+        response = client.get(
+            "/trips/pricing/"
+        )
+
+    assert response.status_code == 200
+
+
+def test_modify_pricing_rule_ok(client):
+    with patch("app.routes.trips_routes.requests.get") as mock_get:
+        mock_get.return_value.ok = True
+        new_rule = {
+            "base": 1,
+            "distance": None,
+            "duration": None,
+            "days_of_week": [],
+            "busy_hours": [],
+            "busy_hours_extra": None,
+            "week_day_extra": None,
+            "passenger_rating": None
+        }
+
+        client.patch(
+            "/trips/cost/",
+            json=new_rule
+        )
+        response = client.get(
+            "/trips/pricing/"
+        )
+
+    assert response.status_code == 200
+    assert response.json()["base"] == 1
