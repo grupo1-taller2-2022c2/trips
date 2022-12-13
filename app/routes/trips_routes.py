@@ -232,6 +232,21 @@ def change_trip_state(trip: TripState, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/pricing/", status_code=status.HTTP_200_OK)
+def get_pricing():
+    pricing = {
+        "base": PRICING.base,
+        "distance": PRICING.distance,
+        "duration": PRICING.duration,
+        "days_of_week": PRICING.days_of_week,
+        "busy_hours": PRICING.busy_hours,
+        "busy_hours_extra": PRICING.busy_hours_extra,
+        "week_day_extra": PRICING.week_day_extra,
+        "passenger_rating": PRICING.passenger_rating
+    }
+    return pricing
+
+
 def address_exists(street_address: str, street_num: int):
     city = "Buenos Aires"
     country = "Argentina"
