@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.cruds.drivers_cruds import save_driver_location_db, get_driver_location_by_email, \
-    delete_drivers_last_location_db, get_drivers_assigned_trip_db, delete_drivers_assigned_trip_db
+    delete_drivers_last_location_db, get_drivers_assigned_trip_db, delete_drivers_assigned_trip_db, delete_all_drivers_last_location_db
 from app.cruds.trips_cruds import *
 from sqlalchemy.orm import Session
 from starlette import status
@@ -48,6 +48,11 @@ def gat_drivers_assigned_trip(driveremail: str, db: Session = Depends(get_db)):
     delete_drivers_assigned_trip_db(driveremail, db)
     send_push_message(email=passenger_email, title="Trip Cancelled",
                       message=f"The trip with id {trip_id} was cancelled due to internal error.", db=db)
+
+
+@router.delete("/last_location/all", status_code=status.HTTP_200_OK)
+def delete_all_drivers_last_location(db: Session = Depends(get_db)):
+    return delete_all_drivers_last_location_db(db)
 
 
 def calculate_distance(src_address, src_number, dst_address, dst_number):

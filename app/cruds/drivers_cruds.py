@@ -53,6 +53,15 @@ def delete_drivers_last_location_db(driver_email: str, db: Session):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+def delete_all_drivers_last_location_db(db: Session):
+    try:
+        db.query(DriverLocation).delete()
+        db.commit()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail="Could not delete drivers location in trips: " + e.__str__)
+
+
 def change_driver_state(driver_email: str, state: str, db: Session):
     driver_db = db.query(DriverLocation).filter(
         DriverLocation.email == driver_email).first()
