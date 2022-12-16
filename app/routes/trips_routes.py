@@ -34,9 +34,38 @@ PRICING = Pricing()
 def get_travel_history(
     email: str, user_type: Union[str, None] = None, db: Session = Depends(get_db)
 ):
+    histories = []
     if user_type == "driver":
-        return get_driver_travel_history_from_db(email, db)
-    return get_passenger_travel_history_from_db(email, db)
+        trips = get_driver_travel_history_from_db(email, db)
+        for trip in trips:
+            trip = dict(trip.__dict__)
+            url = url_base + "/passengers/" + trip["passenger_email"]
+            response = requests.get(url=url)
+            if not response.ok:
+                raise HTTPException(status_code=response.status_code, detail=response.json()["detail"])
+            history = {
+                "username": response.json()["username"],
+                "surname": response.json()["surname"],
+                "ratings": response.json()["ratings"]
+            }
+            trip["info"] = history
+            histories.append(trip)
+        return histories
+    trips = get_passenger_travel_history_from_db(email, db)
+    for trip in trips:
+        trip = dict(trip.__dict__)
+        url = url_base + "/drivers/" + trip["driver_email"]
+        response = requests.get(url=url)
+        if not response.ok:
+            raise HTTPException(status_code=response.status_code, detail=response.json()["detail"])
+        history = {
+            "username": response.json()["username"],
+            "surname": response.json()["surname"],
+            "ratings": response.json()["ratings"]
+        }
+        trip["info"] = history
+        histories.append(trip)
+    return histories
 
 
 @router.get("/address_validation/", status_code=status.HTTP_200_OK)
