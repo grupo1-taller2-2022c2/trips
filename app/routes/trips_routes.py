@@ -54,6 +54,10 @@ def get_travel_history(
     trips = get_passenger_travel_history_from_db(email, db)
     for trip in trips:
         trip = dict(trip.__dict__)
+        if trip["driver_email"] == None:
+            trip["info"] = None
+            histories.append(trip)
+            continue
         url = url_base + "/drivers/" + trip["driver_email"]
         response = requests.get(url=url)
         if not response.ok:
